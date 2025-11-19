@@ -10,10 +10,13 @@ const authController = require('./controllers/authController');
 
 const app = express();
 const server = http.createServer(app);
+
+// CORS configuration
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -24,15 +27,37 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Routes - ADD THESE ROUTES
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Chat Server API is running!',
+    endpoints: {
+      health: '/api/health',
+      register: '/api/auth/register',
+      login: '/api/auth/login'
+    }
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Chat server is running',
+    timestamp: new Date().toISOString(),
+    database: 'Connected'
+  });
+});
+
 app.post('/api/auth/register', authController.register);
 app.post('/api/auth/login', authController.login);
 
 // Socket.io setup
 setupSocketHandlers(io);
 
-const PORT = process.env.PORT || 5000;
+// Use Render's port
+const PORT = process.env.PORT || 10000;
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🌐 Health check: http://localhost:${PORT}/api/health`);
 });
